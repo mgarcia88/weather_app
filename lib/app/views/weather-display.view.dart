@@ -50,22 +50,23 @@ class _WeatherDisplayViewState extends State<WeatherDisplayView> {
                 Container(
                   height: 200,
                   child: StreamBuilder(
-                      stream: _controller.allPredictsWeather,
+                      stream: _controller.isLoading,
                       builder: (context, snapshot) {
-                        if (snapshot.hasData) {
+                        if (snapshot.hasData && !snapshot.data) {
                           return ListView.builder(
                               scrollDirection: Axis.horizontal,
-                              itemCount:
-                                  snapshot.data.consolidatedWeather.length,
+                              itemCount: _controller.allPredictsWeather.consolidatedWeather.length,
                               itemBuilder: (context, index) {
                                 return _showWeatherPrediction(
-                                    snapshot.data.consolidatedWeather[index]);
+                                    _controller.allPredictsWeather.consolidatedWeather[index]);
                               });
                         }
+                        else if (!snapshot.hasData && snapshot.data == null)
+                        {
+                          return Container(width: 10, height: 10,);
+                        }
 
-                        return Center(
-                          child: CircularProgressIndicator(),
-                        );
+                        return Center(child: CircularProgressIndicator());
                       }),
                 ),
               ],

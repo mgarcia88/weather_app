@@ -1,11 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
-import 'package:weather/app/enums/weather-condition.enum.dart';
 import 'package:weather/app/enums/weather-icon.enum.dart';
 import 'package:weather/app/infrastructure/interfaces/weather-api-client.interface.dart';
 import 'package:weather/app/models/location.model.dart';
-import 'package:weather/app/models/weather.model.dart';
+import 'package:weather/app/models/metaweather.model.dart';
 import 'package:weather/app/services/city.service.dart';
 
 class WeatherBloc {
@@ -16,9 +15,13 @@ class WeatherBloc {
 
   Stream<List<LocationModel>> get allAvailableCities => _citiesFetcher.stream;
 
-  final _weatherFetcher = StreamController<WeatherModel>();
+  final _weatherFetcher = StreamController<bool>();
 
-  Stream<WeatherModel> get allPredictsWeather => _weatherFetcher.stream;
+  Stream<bool> get isLoading => _weatherFetcher.stream;
+
+  MetaWeatherModel get allPredictsWeather => _allPredictsWeather;
+
+  MetaWeatherModel _allPredictsWeather;
 
   WeatherBloc(IWeatherApiClient weatherApiClient) {
     _weatherApiClient = weatherApiClient;
@@ -26,6 +29,7 @@ class WeatherBloc {
   }
 
   void fetchCityInformationByName(String name) async {
+    _weatherFetcher.sink.add(true);
     var cities = cityService.availableCities;
     var location = cities.where((element) => element.name == name).first;
 
@@ -34,10 +38,10 @@ class WeatherBloc {
           .fetchCityInformationByNameAndState(name, location.state);
 
       if (apiResult != null) {
-        var weatherApiResult = await _weatherApiClient
+        _allPredictsWeather = await _weatherApiClient
             .fetchWeatherInformationByCityId(apiResult.id);
 
-        _weatherFetcher.sink.add(weatherApiResult);
+        _weatherFetcher.sink.add(false);
       }
     }
   }
