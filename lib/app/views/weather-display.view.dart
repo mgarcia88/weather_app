@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:mdi/mdi.dart';
 import 'package:weather/app/controllers/weather.bloc.dart';
 import 'package:weather/app/enums/weather-condition.enum.dart';
-import 'package:weather/app/infrastructure/metaweather.client.dart';
+import 'package:weather/app/infrastructure/interfaces/weather-api-client.interface.dart';
+import 'package:weather/app/infrastructure/locator/locator.service.dart';
 import 'package:weather/app/models/location.model.dart';
 
 class WeatherDisplayView extends StatefulWidget {
@@ -31,7 +32,7 @@ class _WeatherDisplayViewState extends State<WeatherDisplayView> {
   @override
   void initState() {
     super.initState();
-    _controller = new WeatherBloc(new MetaWeatherClient());
+    _controller = new WeatherBloc(locator.get<IWeatherApiClient>());
     _cities = _controller.fetchAvailableCities();
   }
 

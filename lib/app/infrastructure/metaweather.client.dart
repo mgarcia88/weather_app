@@ -1,4 +1,4 @@
-import 'package:dio/dio.dart';
+import 'package:weather/app/infrastructure/interfaces/http-client.interface.dart';
 import 'package:weather/app/models/location.model.dart';
 import 'package:weather/app/models/metaweather.model.dart';
 import 'package:weather/app/models/weather.model.dart';
@@ -7,17 +7,18 @@ import 'interfaces/weather-api-client.interface.dart';
 
 class MetaWeatherClient implements IWeatherApiClient {
   String baseUrl = "https://www.metaweather.com/api";
-  var dio;
+  IHttpClient _httpClient;
 
-  MetaWeatherClient() {
-    dio = new Dio();
+  MetaWeatherClient(IHttpClient httpClient)
+  {
+    _httpClient = httpClient;
   }
 
   @override
   Future<LocationModel> fetchCityInformationByNameAndState(
       String name, String state) async {
     var cityInformation =
-        await dio.get("$baseUrl/location/search/?query=$name");
+        await _httpClient.get("$baseUrl/location/search/?query=$name");
 
     return Future.value(new LocationModel(
         name: cityInformation.data[0]["title"],
@@ -26,7 +27,7 @@ class MetaWeatherClient implements IWeatherApiClient {
 
   @override
   Future<WeatherModel> fetchWeatherInformationByCityId(int id) async{
-    var weatherInformation = await dio.get("$baseUrl/location/$id/");
+    var weatherInformation = await _httpClient.get("$baseUrl/location/$id/");
 
     return Future.value(new MetaWeatherModel.fromJson(weatherInformation.data));
   }
