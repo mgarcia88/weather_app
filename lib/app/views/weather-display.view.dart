@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:mdi/mdi.dart';
 import 'package:weather/app/controllers/weather.bloc.dart';
+import 'package:weather/app/enums/weather-condition.enum.dart';
 import 'package:weather/app/infrastructure/metaweather.client.dart';
-import 'package:weather/app/models/consolidate-weather.model.dart';
 import 'package:weather/app/models/location.model.dart';
 
 class WeatherDisplayView extends StatefulWidget {
@@ -11,64 +12,46 @@ class WeatherDisplayView extends StatefulWidget {
 
 class _WeatherDisplayViewState extends State<WeatherDisplayView> {
   var _controller;
+  List<LocationModel> _cities;
+
+  Map<String, IconData> _enumDescriptionIcon = {
+    WeatherCondition.SNOW.toUpperCase(): Mdi.weatherSnowyHeavy,
+    WeatherCondition.SLEET.toString(): Mdi.sleep,
+    WeatherCondition.HAIL.toString(): Mdi.weatherHail,
+    WeatherCondition.THUNDERSTORM.toString(): Mdi.weatherLightningRainy,
+    WeatherCondition.HEAVYRAIN.toString(): Mdi.weatherPouring,
+    WeatherCondition.LIGHTRAIN.toString(): Mdi.weatherRainy,
+    WeatherCondition.SHOWERS.toString(): Mdi.weatherPartlySnowyRainy,
+    WeatherCondition.HEAVYCLOUD.toString(): Mdi.weatherCloudyAlert,
+    WeatherCondition.LIGHTCLOUD.toString(): Mdi.weatherPartlyCloudy,
+    WeatherCondition.CLEAR.toString(): Mdi.weatherSunny,
+    WeatherCondition.UNKNOWN.toString(): Mdi.weatherSunnyOff
+  };
 
   @override
   void initState() {
     super.initState();
     _controller = new WeatherBloc(new MetaWeatherClient());
+    _cities = _controller.fetchAvailableCities();
   }
 
   @override
   Widget build(BuildContext context) {
-    var size = MediaQuery.of(context).size;
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         centerTitle: true,
         title: Text("Previsão do tempo"),
       ),
-      body: SingleChildScrollView(
+      body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Container(
-            width: size.width,
-            height: size.height,
             child: Column(
               children: [
-                StreamBuilder(
-                    stream: _controller.allAvailableCities,
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData) {
-                        return citiesList(snapshot.data);
-                      }
-                      return Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    }),
+                citiesList(_cities),
                 SizedBox(height: 30),
-                Container(
-                  height: 200,
-                  child: StreamBuilder(
-                      stream: _controller.isLoading,
-                      builder: (context, snapshot) {
-                        if (snapshot.hasData && !snapshot.data) {
-                          return ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: _controller.allPredictsWeather.consolidatedWeather.length,
-                              itemBuilder: (context, index) {
-                                return _showWeatherPrediction(
-                                    _controller.allPredictsWeather.consolidatedWeather[index]);
-                              });
-                        }
-                        else if (!snapshot.hasData && snapshot.data == null)
-                        {
-                          return Container(width: 10, height: 10,);
-                        }
-
-                        return Center(child: CircularProgressIndicator());
-                      }),
-                ),
+                _showWeatherPrediction()
               ],
             ),
           ),
@@ -79,9 +62,14 @@ class _WeatherDisplayViewState extends State<WeatherDisplayView> {
 
   Widget citiesList(List<LocationModel> data) {
     return DropdownButtonFormField(
+        elevation: 20,
+        iconSize: 28,
+        iconDisabledColor: Colors.grey,
+        iconEnabledColor: Colors.indigo,
         onChanged: (value) {
           _controller.fetchCityInformationByName(value);
         },
+        value: _controller.citySelectedValue,
         items: data.map<DropdownMenuItem<String>>((LocationModel value) {
           return DropdownMenuItem<String>(
             value: value.name,
@@ -90,18 +78,52 @@ class _WeatherDisplayViewState extends State<WeatherDisplayView> {
         }).toList());
   }
 
-  Widget _showWeatherPrediction(ConsolidatedWeather weather) {
+  Widget _showWeatherPrediction() {
     return Container(
-      width: MediaQuery.of(context).size.width / 1.2,
       height: 200,
-      child: Card(
-        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(_controller
-              .getIconFromWeatherCondition(weather.weatherStateName)),
-          Text(weather.applicableDate),
-          Text(weather.weatherStateName),
-        ]),
-      ),
+      child: StreamBuilder(
+          stream: _controller.isLoading,
+          builder: (context, snapshot) {
+            if (snapshot.hasData && !snapshot.data) {
+              return ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount:
+                      _controller.allPredictsWeather.consolidatedWeather.length,
+                  itemBuilder: (context, index) {
+                    var weather = _controller
+                        .allPredictsWeather.consolidatedWeather[index];
+
+                    return Container(
+                      width: MediaQuery.of(context).size.width / 1.2,
+                      height: 500,
+                      child: Card(
+                        elevation: 9,
+                        child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(_enumDescriptionIcon[
+                                  weather.weatherStateName]),
+                              Text(weather.applicableDate),
+                              Text(weather.weatherStateName),
+                            ]),
+                      ),
+                    );
+                  });
+            } else if (!snapshot.hasData && snapshot.data == null) {
+              return Container(
+                width: 10,
+                height: 10,
+              );
+            }
+
+            return Center(child: CircularProgressIndicator());
+          }),
     );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 }

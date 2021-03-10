@@ -1,7 +1,4 @@
 import 'dart:async';
-
-import 'package:flutter/cupertino.dart';
-import 'package:weather/app/enums/weather-icon.enum.dart';
 import 'package:weather/app/infrastructure/interfaces/weather-api-client.interface.dart';
 import 'package:weather/app/models/location.model.dart';
 import 'package:weather/app/models/metaweather.model.dart';
@@ -11,10 +8,6 @@ class WeatherBloc {
   IWeatherApiClient _weatherApiClient;
   var cityService = new CityService();
 
-  final _citiesFetcher = StreamController<List<LocationModel>>();
-
-  Stream<List<LocationModel>> get allAvailableCities => _citiesFetcher.stream;
-
   final _weatherFetcher = StreamController<bool>();
 
   Stream<bool> get isLoading => _weatherFetcher.stream;
@@ -23,68 +16,45 @@ class WeatherBloc {
 
   MetaWeatherModel _allPredictsWeather;
 
+  String _citySelectedValue = "Selecione a cidade";
+
+  String get citySelectedValue => _citySelectedValue;
+
   WeatherBloc(IWeatherApiClient weatherApiClient) {
     _weatherApiClient = weatherApiClient;
     fetchAvailableCities();
   }
 
+  void changeSelectedCity(String value) {
+    _citySelectedValue = value;
+  }
+
   void fetchCityInformationByName(String name) async {
-    _weatherFetcher.sink.add(true);
-    var cities = cityService.availableCities;
-    var location = cities.where((element) => element.name == name).first;
+    if (name != "Selecione a cidade") {
+      changeSelectedCity(name);
+      _weatherFetcher.sink.add(true);
+      var cities = cityService.availableCities;
+      var location = cities.where((element) => element.name == name).first;
 
-    if (location != null) {
-      var apiResult = await _weatherApiClient
-          .fetchCityInformationByNameAndState(name, location.state);
+      if (location != null) {
+        var apiResult = await _weatherApiClient
+            .fetchCityInformationByNameAndState(name, location.state);
 
-      if (apiResult != null) {
-        _allPredictsWeather = await _weatherApiClient
-            .fetchWeatherInformationByCityId(apiResult.id);
+        if (apiResult != null) {
+          _allPredictsWeather = await _weatherApiClient
+              .fetchWeatherInformationByCityId(apiResult.id);
 
-        _weatherFetcher.sink.add(false);
+          _weatherFetcher.sink.add(false);
+        }
       }
     }
   }
 
-  void fetchAvailableCities() {
-    _citiesFetcher.sink.add(cityService.availableCities);
+  List<LocationModel> fetchAvailableCities() {
+    return cityService.availableCities;
   }
 
-  IconData getIconFromWeatherCondition(String weatherCondition) {
-    switch (weatherCondition) {
-      case "Clear":
-        return WeatherIconEnum.clear;
-        break;
-      case "Snow":
-        return WeatherIconEnum.snow;
-        break;
-      case "Sleet":
-        return WeatherIconEnum.sleet;
-        break;
-      case "Hail":
-        return WeatherIconEnum.hail;
-        break;
-      case "Thunderstorm":
-        return WeatherIconEnum.thunderstorm;
-        break;
-      case "Heavy Rain":
-        return WeatherIconEnum.heavyRain;
-        break;
-      case "Light Rain":
-        return WeatherIconEnum.lightRain;
-        break;
-      case "Showers":
-        return WeatherIconEnum.showers;
-        break;
-      case "Heavy Cloud":
-        return WeatherIconEnum.heavyCloud;
-        break;
-      case "Light Cloud":
-        return WeatherIconEnum.lightCloud;
-        break;
-      case "Unknown":
-        return WeatherIconEnum.unknown;
-        break;
-    }
+  dispose() {
+    _weatherFetcher.close();
   }
 }

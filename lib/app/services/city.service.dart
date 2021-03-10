@@ -11,10 +11,11 @@ class CityService{
   }
 
   _getAvailableCities(){
+    _availableCities.add(new LocationModel(country: "", state: "", name: "Selecione a cidade"));
     _availableCities.add(new LocationModel(country: "EN", state: "", name: "London"));
     _availableCities.add(new LocationModel(country: "BR", state: "RJ", name: "Rio de Janeiro"));
     _availableCities.add(new LocationModel(country: "BR", state: "SP", name: "São Paulo"));
-    _availableCities.add(new LocationModel(country: "BR", state: "MG", name: "Belo Horizonte"));
+    _availableCities.add(new LocationModel(country: "USA", state: "", name: "Boston"));
     _availableCities.add(new LocationModel(country: "USA", state: "", name: "New york"));
   }
 }
