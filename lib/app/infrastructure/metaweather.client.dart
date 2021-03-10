@@ -4,14 +4,15 @@ import 'package:weather/app/models/metaweather.model.dart';
 import 'package:weather/app/models/weather.model.dart';
 
 import 'interfaces/weather-api-client.interface.dart';
+import 'locator/locator.service.dart';
 
 class MetaWeatherClient implements IWeatherApiClient {
   String baseUrl = "https://www.metaweather.com/api";
   IHttpClient _httpClient;
 
-  MetaWeatherClient(IHttpClient httpClient)
+  MetaWeatherClient()
   {
-    _httpClient = httpClient;
+    _httpClient = locator.get<IHttpClient>();
   }
 
   @override
